@@ -14,7 +14,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// Define database connection details
+// Define database connection details   // A
 const (
 	host     = "localhost"
 	port     = 5432
@@ -23,20 +23,20 @@ const (
 	dbname   = "users"
 )
 
-// Define database tables
+// Define database tables //  A
 const (
 	usersTable       = "users"
 	invitationsTable = "invitations"
 	adminsTable      = "admins"
 )
 
-// User struct represents a user in the system
+// User struct represents a user in the system //B
 type User struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
 
-// Invitation struct represents an invitation code
+// Invitation struct represents an invitation code //B
 type Invitation struct {
 	ID       int       `json:"id"`
 	Code     string    `json:"code"`
@@ -44,14 +44,14 @@ type Invitation struct {
 	IssuedAt time.Time `json:"issued_at"`
 }
 
-// Admin struct represents an admin user
+// Admin struct represents an admin user  //F
 type Admin struct {
 	ID       int    `json:"id"`
 	Username string `json:"username"`
 	Password string `json:"-"`
 }
 
-// SetupDatabase creates a connection to the PostgreSQL database
+// SetupDatabase creates a connection to the PostgreSQL database // A
 func SetupDatabase() *sql.DB {
 	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
 		host, port, user, password, dbname)
@@ -62,7 +62,7 @@ func SetupDatabase() *sql.DB {
 	return db
 }
 
-// RegisterHandler handles user registration
+// RegisterHandler handles user registration //B
 func RegisterHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
@@ -137,7 +137,7 @@ func RegisterHandler(db *sql.DB) http.HandlerFunc {
 	}
 }
 
-// isUsernameExists checks if the username already exists in the database
+// isUsernameExists checks if the username already exists in the database //C
 func isUsernameExists(db *sql.DB, username string) (bool, error) {
 	var count int
 	err := db.QueryRow("SELECT COUNT(*) FROM users WHERE username = $1", username).Scan(&count)
@@ -147,7 +147,7 @@ func isUsernameExists(db *sql.DB, username string) (bool, error) {
 	return count > 0, nil
 }
 
-// validateInvitationCode checks if the provided invitation code is valid and unused
+// validateInvitationCode checks if the provided invitation code is valid and unused //D
 func validateInvitationCode(db *sql.DB, code string) (bool, error) {
 	var used bool
 	err := db.QueryRow("SELECT used FROM invitations WHERE code = $1", code).Scan(&used)
@@ -160,13 +160,13 @@ func validateInvitationCode(db *sql.DB, code string) (bool, error) {
 	return !used, nil // Invitation code is valid if it is not used
 }
 
-// markInvitationCodeAsUsed marks the invitation code as used in the database
+// markInvitationCodeAsUsed marks the invitation code as used in the database  //D
 func markInvitationCodeAsUsed(db *sql.DB, code string) error {
 	_, err := db.Exec("UPDATE invitations SET used = true WHERE code = $1", code)
 	return err
 }
 
-// LoginHandler handles user login
+// LoginHandler handles user login // E
 func LoginHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
@@ -212,7 +212,7 @@ func LoginHandler(db *sql.DB) http.HandlerFunc {
 	}
 }
 
-// GenerateInvitationHandler generates a new invitation code
+// GenerateInvitationHandler generates a new invitation code //F
 func GenerateInvitationHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Parse the request body to extract admin credentials
@@ -247,14 +247,14 @@ func GenerateInvitationHandler(db *sql.DB) http.HandlerFunc {
 	}
 }
 
-// storeInvitationCode inserts the generated invitation code into the database
+// storeInvitationCode inserts the generated invitation code into the database //G
 func storeInvitationCode(db *sql.DB, invitationCode string) error {
 	_, err := db.Exec("INSERT INTO invitations (code, used, issued_at) VALUES ($1, $2, $3)",
 		invitationCode, false, time.Now())
 	return err
 }
 
-// verifyAdminCredentials verifies the provided admin credentials against the values stored in the database
+// verifyAdminCredentials verifies the provided admin credentials against the values stored in the database //G
 func verifyAdminCredentials(db *sql.DB, admin Admin) (bool, error) {
 	var storedPasswordHash string
 	err := db.QueryRow("SELECT password_hash FROM admins WHERE username = $1", admin.Username).Scan(&storedPasswordHash)
@@ -273,8 +273,8 @@ func verifyAdminCredentials(db *sql.DB, admin Admin) (bool, error) {
 
 	return true, nil // Admin credentials are valid
 }
-func generateInvitationCode() string {
-	// Define the characters that can be used in the invitation code
+func generateInvitationCode() string {  
+	// Define the characters that can be used in the invitation code //H
 	const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
 
 	// Initialize a random seed using the current time
@@ -292,7 +292,7 @@ func generateInvitationCode() string {
 	return string(code)
 }
 
-// RegisterAdminHandler handles registration of admin users
+// RegisterAdminHandler handles registration of admin users // I
 func RegisterAdminHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
@@ -339,16 +339,16 @@ func RegisterAdminHandler(db *sql.DB) http.HandlerFunc {
 }
 
 func StaticFileHandler(w http.ResponseWriter, r *http.Request) {
-	// Construct the absolute file path to index.html
+	// Construct the absolute file path to index.html // J
 	indexPath := filepath.Join("frontend", "index.html")
 
 	// Serve the file
 	http.ServeFile(w, r, indexPath)
 }
-func invitePageHandler(w http.ResponseWriter, r *http.Request) {
+func invitePageHandler(w http.ResponseWriter, r *http.Request) { //J
 	http.ServeFile(w, r, "frontend/invite/index.html")
 }
-func main() {
+func main() {                               // B
 	db := SetupDatabase()
 	defer db.Close()
 
